@@ -182,20 +182,195 @@ export const InteractiveSimulator: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Parameters on Left, Output & Graph on Right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Parameter Sliders (4 cols) */}
-        <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xs">
-          <div className="flex items-center gap-2 pb-4 border-b border-slate-100">
-            <Sliders className="w-4 h-4 text-blue-600" />
-            <h3 className="text-base font-bold text-slate-900">Parâmetros Epidemiológicos</h3>
+      {/* Main Grid: On mobile, Graph and Metrics come first (order-1), then Sliders (order-2) */}
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 items-start">
+        {/* Graph & Results Column (7 cols on desktop, FIRST on mobile) */}
+        <div className="w-full lg:col-span-7 space-y-6 order-1 lg:order-2">
+          {/* Dynamic SVG Comparison Chart */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-bold text-slate-900">
+                    Curva Comparativa de Óbitos Diários (2021)
+                  </h4>
+                  <span className="text-[11px] px-2 py-0.5 rounded font-mono font-semibold bg-blue-100 text-blue-800">
+                    Simulação Ativa
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Modelo SIR-V dinâmico calibrado com dados reais do Brasil (Libotte et al. & Ferreira et al.)
+                </p>
+              </div>
+
+              {/* Legend */}
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono bg-slate-50 p-2 rounded-lg border border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3.5 h-1 bg-blue-600 inline-block rounded-xs"></span>
+                  <span className="text-slate-800 font-semibold">Sua Simulação</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3.5 h-1 bg-slate-400 inline-block border-t border-dashed border-slate-500"></span>
+                  <span className="text-slate-600">Histórico Real</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3.5 h-1 bg-rose-400 inline-block rounded-xs"></span>
+                  <span className="text-rose-700">Sem Vacinação</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Responsive SVG Plot */}
+            <div className="relative w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-2 sm:p-3">
+              <svg
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="w-full h-52 sm:h-64 lg:h-72 overflow-visible"
+              >
+                {/* Horizontal gridlines */}
+                {[0, 1000, 2000, 3000].map((level) => {
+                  const y = svgHeight - (level / maxVal) * (svgHeight - 20) - 10;
+                  return (
+                    <g key={level}>
+                      <line
+                        x1="0"
+                        y1={y}
+                        x2={svgWidth}
+                        y2={y}
+                        stroke="#e2e8f0"
+                        strokeDasharray="4 4"
+                      />
+                      <text x="8" y={y - 4} fontSize="11" fill="#64748b" fontFamily="monospace">
+                        {level} óbitos/dia
+                      </text>
+                    </g>
+                  );
+                })}
+
+                {/* Shaded area between Simulated and No-Vaccine (averted deaths) */}
+                <path
+                  d={`${buildPath(simulationResults.pointsSimulated)} L ${svgWidth},${svgHeight - 10} L 0,${svgHeight - 10} Z`}
+                  fill="#3b82f6"
+                  opacity="0.08"
+                />
+
+                {/* No-Vaccine Counterfactual Curve (Rose) */}
+                <path
+                  d={buildPath(simulationResults.pointsNoVaccine)}
+                  fill="none"
+                  stroke="#fb7185"
+                  strokeWidth="2.5"
+                  strokeDasharray="6 3"
+                  opacity="0.85"
+                />
+
+                {/* Real Historical Curve (Slate dashed) */}
+                <path
+                  d={buildPath(simulationResults.pointsReal)}
+                  fill="none"
+                  stroke="#64748b"
+                  strokeWidth="2"
+                  strokeDasharray="4 4"
+                  opacity="0.75"
+                />
+
+                {/* User Simulated Curve (Blue Solid) */}
+                <path
+                  d={buildPath(simulationResults.pointsSimulated)}
+                  fill="none"
+                  stroke="#2563eb"
+                  strokeWidth="3.5"
+                />
+              </svg>
+
+              {/* Time axis marks */}
+              <div className="flex justify-between text-[10px] sm:text-xs text-slate-500 font-mono mt-2 px-1">
+                <span>Jan/21 (Início)</span>
+                <span>Abr/21 (Gama)</span>
+                <span>Jul/21 (Avanço)</span>
+                <span>Out/21 (Queda)</span>
+                <span>Dez/21 (Reforço)</span>
+              </div>
+            </div>
+
+            {/* Real-Time Impact Metric Cards */}
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl">
+                <div className="text-[10px] sm:text-[11px] font-semibold text-blue-900 uppercase tracking-wider mb-1">
+                  Óbitos Evitados
+                </div>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-blue-700 tabular-nums">
+                  {simulationResults.simulatedAvertedDeaths.toLocaleString('pt-BR')}
+                </div>
+                <div className={`text-[10px] sm:text-[11px] font-mono mt-0.5 font-medium ${
+                  simulationResults.deltaLives >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                }`}>
+                  {simulationResults.deltaLives >= 0 ? '+' : ''}
+                  {simulationResults.deltaLives.toLocaleString('pt-BR')} vs real
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="text-[10px] sm:text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  Casos Graves Poupados
+                </div>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-indigo-700 tabular-nums">
+                  {simulationResults.simulatedAvertedCases.toLocaleString('pt-BR')}
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
+                  Leitos de UTI livres
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="text-[10px] sm:text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  Economia ao SUS
+                </div>
+                <div className="text-xl sm:text-2xl font-mono font-bold text-emerald-700 tabular-nums">
+                  US$ {simulationResults.costSavedMillionUSD}M
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
+                  Custos hospitalares
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="text-[10px] sm:text-[11px] font-semibold text-slate-600 uppercase tracking-wider mb-1">
+                  R(t) Efetivo
+                </div>
+                <div className={`text-xl sm:text-2xl font-mono font-bold tabular-nums ${
+                  simulationResults.effectiveR < 1 ? 'text-emerald-700' : 'text-rose-600'
+                }`}>
+                  {simulationResults.effectiveR}
+                </div>
+                <div className="text-[10px] sm:text-[11px] text-slate-500 mt-0.5">
+                  {simulationResults.effectiveR < 1 ? 'Epidemia em queda' : 'Contágio em alta'}
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Visual Cue */}
+            <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 leading-relaxed">
+              💡 <strong>Como ler o gráfico no celular:</strong> Ao mover os controles abaixo, a linha azul responde instantaneamente. 
+              Veja a diferença entre a linha azul e a vermelha pontilhada: cada espaço entre elas representa vidas brasileiras poupadas.
+            </div>
+          </div>
+        </div>
+
+        {/* Sliders Column (5 cols on desktop, SECOND on mobile) */}
+        <div className="w-full lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xs order-2 lg:order-1">
+          <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-blue-600" />
+              <h3 className="text-base font-bold text-slate-900">Ajuste os Parâmetros</h3>
+            </div>
+            <span className="text-xs text-slate-400 font-mono">Tempo Real</span>
           </div>
 
           {/* Slider 1: Days Shift */}
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-800">
-                Data de Início da Vacinação
+                1. Início da Vacinação
               </label>
               <span className="font-mono font-bold text-blue-700 tabular-nums">
                 {daysShift === 0
@@ -212,7 +387,7 @@ export const InteractiveSimulator: React.FC = () => {
               step="5"
               value={daysShift}
               onChange={(e) => setDaysShift(Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 py-1"
             />
             <div className="flex justify-between text-[11px] text-slate-400 font-mono">
               <span>-60d (Nov/20)</span>
@@ -232,7 +407,7 @@ export const InteractiveSimulator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-800">
-                Ritmo de Vacinação Diária
+                2. Ritmo Diário de Aplicação
               </label>
               <span className="font-mono font-bold text-blue-700 tabular-nums">
                 {dailyRate.toFixed(2)}% da pop./dia (~{Math.round(dailyRate * 1530000).toLocaleString('pt-BR')} doses/dia)
@@ -245,7 +420,7 @@ export const InteractiveSimulator: React.FC = () => {
               step="0.05"
               value={dailyRate}
               onChange={(e) => setDailyRate(Number(e.target.value))}
-              className="w-full accent-blue-600 cursor-pointer"
+              className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600 py-1"
             />
             <div className="flex justify-between text-[11px] text-slate-400 font-mono">
               <span>0.20% (Lento)</span>
@@ -261,7 +436,7 @@ export const InteractiveSimulator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-800">
-                Abandono da 2ª Dose (Hesitação / Desinformação)
+                3. Abandono da 2ª Dose
               </label>
               <span className="font-mono font-bold text-rose-700 tabular-nums">
                 {secondDoseDrop}% da população
@@ -274,7 +449,7 @@ export const InteractiveSimulator: React.FC = () => {
               step="5"
               value={secondDoseDrop}
               onChange={(e) => setSecondDoseDrop(Number(e.target.value))}
-              className="w-full accent-rose-600 cursor-pointer"
+              className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600 py-1"
             />
             <div className="flex justify-between text-[11px] text-slate-400 font-mono">
               <span>0% (Adesão Total)</span>
@@ -290,7 +465,7 @@ export const InteractiveSimulator: React.FC = () => {
           <div className="space-y-2">
             <div className="flex justify-between items-center text-xs">
               <label className="font-semibold text-slate-800">
-                Eficácia Ponderada dos Imunizantes
+                4. Eficácia Ponderada
               </label>
               <span className="font-mono font-bold text-emerald-700 tabular-nums">
                 {vaccineEfficacy}%
@@ -303,7 +478,7 @@ export const InteractiveSimulator: React.FC = () => {
               step="5"
               value={vaccineEfficacy}
               onChange={(e) => setVaccineEfficacy(Number(e.target.value))}
-              className="w-full accent-emerald-600 cursor-pointer"
+              className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600 py-1"
             />
             <div className="flex justify-between text-[11px] text-slate-400 font-mono">
               <span>50% (Mínima OMS)</span>
@@ -313,164 +488,6 @@ export const InteractiveSimulator: React.FC = () => {
             <p className="text-[11px] text-slate-500">
               CoronaVac (50,3% a 61,2%), AstraZeneca (76% a 86,4%), Pfizer (95%).
             </p>
-          </div>
-        </div>
-
-        {/* Right Column: Visualization & Results (7 cols) */}
-        <div className="lg:col-span-7 space-y-6">
-          {/* Real-Time Impact Metric Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 bg-white border border-slate-200 rounded-xl">
-              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">
-                Óbitos Evitados
-              </div>
-              <div className="text-xl sm:text-2xl font-mono font-bold text-blue-700 tabular-nums">
-                {simulationResults.simulatedAvertedDeaths.toLocaleString('pt-BR')}
-              </div>
-              <div className={`text-[11px] font-mono mt-1 ${
-                simulationResults.deltaLives >= 0 ? 'text-emerald-600' : 'text-rose-600'
-              }`}>
-                {simulationResults.deltaLives >= 0 ? '+' : ''}
-                {simulationResults.deltaLives.toLocaleString('pt-BR')} vs real
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-white border border-slate-200 rounded-xl">
-              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">
-                Casos Graves Poupados
-              </div>
-              <div className="text-xl sm:text-2xl font-mono font-bold text-indigo-700 tabular-nums">
-                {simulationResults.simulatedAvertedCases.toLocaleString('pt-BR')}
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1">
-                Leitos de UTI desafogados
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-white border border-slate-200 rounded-xl">
-              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">
-                Economia SUS
-              </div>
-              <div className="text-xl sm:text-2xl font-mono font-bold text-emerald-700 tabular-nums">
-                US$ {simulationResults.costSavedMillionUSD}M
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1">
-                Em internações evitadas
-              </div>
-            </div>
-
-            <div className="p-3.5 bg-white border border-slate-200 rounded-xl">
-              <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider mb-1">
-                R(t) Resultante
-              </div>
-              <div className={`text-xl sm:text-2xl font-mono font-bold tabular-nums ${
-                simulationResults.effectiveR < 1 ? 'text-emerald-700' : 'text-rose-600'
-              }`}>
-                {simulationResults.effectiveR}
-              </div>
-              <div className="text-[11px] text-slate-500 mt-1">
-                {simulationResults.effectiveR < 1 ? 'Epidemia controlada' : 'Transmissão em alta'}
-              </div>
-            </div>
-          </div>
-
-          {/* Dynamic SVG Comparison Chart */}
-          <div className="bg-white border border-slate-200 rounded-2xl p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">
-                  Curva Comparativa de Óbitos Diários (Janeiro a Dezembro de 2021)
-                </h4>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Simulação estocástica baseada nas taxas diárias de incidência de óbitos por 100 mil hab.
-                </p>
-              </div>
-
-              {/* Legend */}
-              <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-blue-600 inline-block"></span>
-                  <span className="text-slate-700">Sua Simulação</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-slate-400 inline-block border-t border-dashed border-slate-400"></span>
-                  <span className="text-slate-500">Histórico Real</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-rose-400 inline-block"></span>
-                  <span className="text-rose-700">Sem Vacinação</span>
-                </div>
-              </div>
-            </div>
-
-            {/* SVG Plot */}
-            <div className="relative w-full overflow-hidden bg-slate-50 rounded-xl border border-slate-200 p-2">
-              <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} className="w-full h-auto overflow-visible">
-                {/* Horizontal gridlines */}
-                {[0, 1000, 2000, 3000].map((level) => {
-                  const y = svgHeight - (level / maxVal) * (svgHeight - 20) - 10;
-                  return (
-                    <g key={level}>
-                      <line
-                        x1="0"
-                        y1={y}
-                        x2={svgWidth}
-                        y2={y}
-                        stroke="#e2e8f0"
-                        strokeDasharray="4 4"
-                      />
-                      <text x="8" y={y - 4} fontSize="9" fill="#94a3b8" fontFamily="monospace">
-                        {level} óbitos/dia
-                      </text>
-                    </g>
-                  );
-                })}
-
-                {/* No-Vaccine Counterfactual Curve (Rose) */}
-                <path
-                  d={buildPath(simulationResults.pointsNoVaccine)}
-                  fill="none"
-                  stroke="#fb7185"
-                  strokeWidth="2"
-                  strokeDasharray="6 3"
-                  opacity="0.85"
-                />
-
-                {/* Real Historical Curve (Slate dashed) */}
-                <path
-                  d={buildPath(simulationResults.pointsReal)}
-                  fill="none"
-                  stroke="#64748b"
-                  strokeWidth="2"
-                  strokeDasharray="4 4"
-                  opacity="0.7"
-                />
-
-                {/* User Simulated Curve (Blue Solid) */}
-                <path
-                  d={buildPath(simulationResults.pointsSimulated)}
-                  fill="none"
-                  stroke="#2563eb"
-                  strokeWidth="3"
-                />
-              </svg>
-
-              {/* Time axis marks */}
-              <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-2 px-2">
-                <span>Jan/2021 (Início)</span>
-                <span>Abr/2021 (Onda Gama)</span>
-                <span>Jul/2021 (Aceleração)</span>
-                <span>Out/2021 (Queda)</span>
-                <span>Dez/2021 (Reforço)</span>
-              </div>
-            </div>
-
-            {/* Scientific Explanation Callout */}
-            <div className="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed">
-              <strong>Como interpretar este gráfico:</strong> A área entre a linha vermelha pontilhada (o que aconteceria sem vacinas) 
-              e a linha azul (sua simulação) representa as <strong>vidas salvas</strong>. Quanto mais à esquerda a linha azul descer, 
-              mais rápido o sistema hospitalar se recupera e menos pessoas morrem nas filas de espera por leitos de oxigênio.
-            </div>
           </div>
         </div>
       </div>
