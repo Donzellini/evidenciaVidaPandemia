@@ -23,13 +23,15 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenL
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
+  // Full navigation items, including Biblioteca de Fontes
   const navItems = [
     { id: 'intro', label: 'Introdução', shortLabel: 'Introdução', icon: Home },
     { id: 'modelos', label: 'Dismistificando Modelos', shortLabel: 'Modelos', icon: Compass },
     { id: 'dados', label: 'Vidas Salvas (27 UFs)', shortLabel: 'Vidas Salvas', icon: BarChart2 },
     { id: 'confronto', label: 'Ciência vs Governo', shortLabel: 'Ciência vs Fatos', icon: ShieldAlert },
     { id: 'simulador', label: 'Simulador Contrafactual', shortLabel: 'Simulador', icon: Cpu },
-    { id: 'jogo', label: 'Jogo: O Epidemiologista', shortLabel: 'Jogo', icon: Gamepad2 }
+    { id: 'jogo', label: 'Jogo: O Epidemiologista', shortLabel: 'Jogo', icon: Gamepad2 },
+    { id: 'fontes', label: 'Biblioteca de Fontes', shortLabel: 'Fontes (28)', icon: BookOpen }
   ];
 
   const handleTabClick = (tab: string) => {
@@ -79,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenL
         </button>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-600">
+        <nav className="hidden xl:flex items-center gap-5 text-sm font-medium text-slate-600">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -98,37 +100,42 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenL
           })}
         </nav>
 
-        {/* Action Controls */}
+        {/* Action Controls & Mobile Trigger */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Quick open full modal button */}
           <button
-            onClick={onOpenLibrary}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition-colors whitespace-nowrap"
+            onClick={() => handleTabClick('fontes')}
+            className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors whitespace-nowrap border ${
+              activeTab === 'fontes'
+                ? 'bg-blue-50 text-blue-800 border-blue-300'
+                : 'text-slate-800 bg-slate-100 hover:bg-slate-200 border-slate-300'
+            }`}
             title="Acessar todos os 28 arquivos originais em PDF"
           >
             <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-            <span className="hidden sm:inline">Biblioteca de Fontes</span>
-            <span className="sm:hidden">Fontes</span>
-            <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-mono">28</span>
+            <span>Fontes & PDFs</span>
+            <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.2 rounded font-mono font-bold">28</span>
           </button>
 
           {/* Mobile All-Sections Toggle Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-300"
-            title="Abrir menu de seções"
-            aria-label="Abrir todas as seções"
+            className="xl:hidden p-1.5 text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors border border-slate-300 flex items-center gap-1.5 text-xs font-semibold"
+            title="Abrir menu com todas as seções"
+            aria-label="Menu de seções"
           >
             {isMobileMenuOpen ? <X className="w-4 h-4 text-slate-800" /> : <Menu className="w-4 h-4 text-slate-800" />}
+            <span className="hidden sm:inline">Menu</span>
           </button>
         </div>
       </div>
 
-      {/* Mobile Rotating Carousel Bar */}
-      <div className="lg:hidden relative bg-slate-50 border-t border-slate-200 py-1.5 px-1 flex items-center">
+      {/* Rotating Carousel Bar for Mobile / Tablet */}
+      <div className="xl:hidden relative bg-slate-50 border-t border-slate-200 py-1.5 px-1 flex items-center">
         {/* Left Arrow Button to Rotate Carousel */}
         <button
           onClick={() => scrollNav('left')}
-          className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-200 active:scale-95 rounded-md transition-all shrink-0 z-10 bg-white/90 shadow-2xs border border-slate-200 mr-1"
+          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200 active:scale-95 rounded-md transition-all shrink-0 z-10 bg-white/95 shadow-2xs border border-slate-200 mr-1"
           title="Rolar seções para a esquerda"
           aria-label="Rolar seções para a esquerda"
         >
@@ -166,7 +173,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenL
         {/* Right Arrow Button to Rotate Carousel */}
         <button
           onClick={() => scrollNav('right')}
-          className="p-1 text-slate-500 hover:text-slate-900 hover:bg-slate-200 active:scale-95 rounded-md transition-all shrink-0 z-10 bg-white/90 shadow-2xs border border-slate-200 ml-1"
+          className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-200 active:scale-95 rounded-md transition-all shrink-0 z-10 bg-white/95 shadow-2xs border border-slate-200 ml-1"
           title="Rolar seções para a direita"
           aria-label="Rolar seções para a direita"
         >
@@ -174,13 +181,13 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenL
         </button>
       </div>
 
-      {/* Mobile Drawer / Expanded Sections Grid Menu */}
+      {/* Expanded Sections Grid Menu */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-slate-200 p-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
+        <div className="xl:hidden bg-white border-b border-slate-200 p-4 shadow-xl animate-in slide-in-from-top-2 duration-150">
           <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Todas as Seções do Portal:
+            Todas as Seções do Portal (Clique para Acessar):
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -188,7 +195,7 @@ export const Header: React.FC<HeaderProps> = ({ activeTab, setActiveTab, onOpenL
                 <button
                   key={item.id}
                   onClick={() => handleTabClick(item.id)}
-                  className={`flex items-center gap-2 p-2.5 rounded-xl text-left text-xs font-semibold transition-all border ${
+                  className={`flex items-center gap-2.5 p-3 rounded-xl text-left text-xs font-semibold transition-all border ${
                     isActive
                       ? 'bg-blue-50 text-blue-800 border-blue-300 shadow-2xs'
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'

@@ -11,8 +11,9 @@ import { StateDataTable } from './components/StateDataTable';
 import { FactsVsPolitics } from './components/FactsVsPolitics';
 import { InteractiveSimulator } from './components/InteractiveSimulator';
 import { GameImmunityDefense } from './components/GameImmunityDefense';
+import { DocumentLibrarySection } from './components/DocumentLibrarySection';
 import { DocumentLibraryModal } from './components/DocumentLibraryModal';
-import { BookOpen, ArrowLeft, Compass, BarChart2, ShieldAlert, Cpu, Gamepad2, Home } from 'lucide-react';
+import { BookOpen, ArrowLeft, Compass, BarChart2, ShieldAlert, Cpu, Gamepad2, Home, FileText } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('intro');
@@ -35,6 +36,8 @@ export default function App() {
         return { title: 'Simulador Contrafactual de Vacinação', icon: Cpu };
       case 'jogo':
         return { title: 'Jogo Educativo: O Epidemiologista no Comando', icon: Gamepad2 };
+      case 'fontes':
+        return { title: 'Biblioteca de Fontes (28 Documentos em PDF)', icon: BookOpen };
       default:
         return { title: 'Introdução & Visão Geral', icon: Home };
     }
@@ -87,6 +90,7 @@ export default function App() {
         {activeTab === 'confronto' && <FactsVsPolitics />}
         {activeTab === 'simulador' && <InteractiveSimulator />}
         {activeTab === 'jogo' && <GameImmunityDefense />}
+        {activeTab === 'fontes' && <DocumentLibrarySection />}
       </main>
 
       {/* Document Library Modal */}
