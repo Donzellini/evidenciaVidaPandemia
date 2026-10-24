@@ -1,0 +1,6 @@
+{
+  "name": "Evidência & Vida - Divulgação Científica da Vacinação no Brasil",
+  "description": "Portal interativo de divulgação científica sobre os modelos epidemiológicos da COVID-19 no Brasil, dados reais de vidas salvas pela vacinação, análise comparada com a atuação governamental e simulador gamificado.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
